@@ -6,19 +6,27 @@ import java.util.Hashtable;
 public class Parque implements IParque{
 
 
-	// TODO 
+	private int aforoMaximo;
 	private int contadorPersonasTotales;
 	private Hashtable<String, Integer> contadoresPersonasPuerta;
 	
 	
-	public Parque() {
+	public Parque(int aforoMaximo) {
 		contadorPersonasTotales = 0;
 		contadoresPersonasPuerta = new Hashtable<String, Integer>();
+		this.aforoMaximo = aforoMaximo;
 	}
 
 
 	@Override
-	public void entrarAlParque(String puerta){		// TODO
+	public void entrarAlParque(String puerta){		
+		
+		try {
+			comprobarAntesDeEntrar();
+		} catch (InterruptedException e) {
+
+			e.printStackTrace();
+		}
 		
 		// Si no hay entradas por esa puerta, inicializamos
 		if (contadoresPersonasPuerta.get(puerta) == null){
@@ -35,16 +43,39 @@ public class Parque implements IParque{
 		// Imprimimos el estado del parque
 		imprimirInfo(puerta, "Entrada");
 		
-		// TODO
+		checkInvariante();
 		
-		
-		// TODO
+		notifyAll();
 		
 	}
 	
-	// 
-	// TODO Método salirDelParque
-	//
+	public synchronized void salirDelParque(String puerta){	
+		
+		// Si no hay entradas por esa puerta, inicializamos
+		if (contadoresPersonasPuerta.get(puerta) == null){
+			contadoresPersonasPuerta.put(puerta, 0);
+		}
+		
+		try {
+			comprobarAntesDeSalir();
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+				
+		
+		// Disminuimos el contador total y el individual
+		contadorPersonasTotales--;		
+		contadoresPersonasPuerta.put(puerta, contadoresPersonasPuerta.get(puerta)-1);
+		
+		// Imprimimos el estado del parque
+		imprimirInfo(puerta, "Salida");
+		
+		checkInvariante();
+		
+		notifyAll();
+		
+	}
+	
 	
 	
 	private void imprimirInfo (String puerta, String movimiento){
@@ -69,23 +100,28 @@ public class Parque implements IParque{
 	
 	protected void checkInvariante() {
 		assert sumarContadoresPuerta() == contadorPersonasTotales : "INV: La suma de contadores de las puertas debe ser igual al valor del contador del parte";
-		// TODO 
-		// TODO
-		
-		
-		
+		assert '0' >= contadorPersonasTotales: "INV: Tiene que haber un mínimo de 0 personas";
+		assert aforoMaximo <= contadorPersonasTotales: "INV: Tiene que haber menos del máximo de personas";
 	}
 
-	protected void comprobarAntesDeEntrar(){
-		//
-		// TODO
-		//
+	protected void comprobarAntesDeEntrar() throws InterruptedException{
+		while(aforoMaximo == contadorPersonasTotales) {
+			try {
+				this.wait();
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
 	}
 
-	protected void comprobarAntesDeSalir(){
-		//
-		// TODO
-		//
+	protected void comprobarAntesDeSalir() throws InterruptedException{
+		while(0 == contadorPersonasTotales) {
+			try {
+				this.wait();
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
 	}
 
 
